@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <cairo/cairo.h>
 
 #include "keyboard.h"
 #include "mouse.h"
@@ -7,10 +8,9 @@
 
 #define DEGREES_TO_RADIANS(d)                       (d * 2 * M_PI / 360)
 
-#define TEXT_WIDTH                                                   519
+#define TEXT_WIDTH                                                   524
 #define TEXT_HEIGHT                                                   32
 #define BYTES_PER_PIXEL                                                4
-#define TEXT_SIZE           (TEXT_WIDTH * TEXT_HEIGHT * BYTES_PER_PIXEL)
 
 #define FRAMES_PER_SECOND                                             60
 
@@ -73,13 +73,15 @@ const GLchar* text_fshader_source =
 
     "uniform sampler2D tex;"
     "void main() {"
-    " gl_FragColor = texture2D(tex, Texcoord);\n"
+    " gl_FragColor = texture2D(tex, Texcoord).bgra;\n"
     "}";
 
 GLuint textVertexShader;
 GLuint textFragmentShader;
 GLuint textProgram;
 
+cairo_surface_t* textSurface;
+cairo_t* textCr;
 GLuint textVbo;
 GLint textTexture;
 
@@ -189,32 +191,37 @@ void destroy_buffers() {
 void init_textures() {
     // Text
 
-    char* textData = malloc(TEXT_SIZE);
-    memset(textData, 0, TEXT_SIZE);
+    textSurface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, TEXT_WIDTH, TEXT_HEIGHT);
+    textCr = cairo_create(textSurface);
 
-    FILE* textFile = fopen("text.rgba", "rb");
-    assert(textFile);
+    cairo_set_source_rgb(textCr, 1, 1, 1);
 
-    int bytes_read = fread(textData, 1, TEXT_SIZE, textFile);
-    assert(bytes_read == TEXT_SIZE);
-    fclose(textFile);
+    cairo_select_font_face(textCr, "Cantarell Regular", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(textCr, 12);
+
+    cairo_move_to(textCr, 0, 15);
+    cairo_show_text(textCr, "Use the X, Y and Z keys to select axes of rotation while moving the mouse up or down.");
+    cairo_move_to(textCr, 0, 30);
+    cairo_show_text(textCr, "Click to animate.");
+
+    unsigned char* pixels = cairo_image_surface_get_data(textSurface);
 
     glActiveTexture(GL_TEXTURE0);
 
     glGenTextures(1, &textTexture);
     glBindTexture(GL_TEXTURE_2D, textTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXT_WIDTH, TEXT_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, textData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXT_WIDTH, TEXT_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLfloat)GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLfloat)GL_NEAREST);
-
-    free(textData);
 }
 
 void destroy_textures() {
     // Text
 
     glDeleteTextures(1, &textTexture);
+    cairo_destroy(textCr);
+    cairo_surface_destroy(textSurface);
 }
 
 void update_triangle_model() {
