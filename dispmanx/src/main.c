@@ -12,18 +12,16 @@
 #define TEXT_HEIGHT                                                   32
 #define FPS_WIDTH                                                    128
 #define FPS_HEIGHT                                                    16
-#define BYTES_PER_PIXEL                                                4
-
-#define FRAMES_PER_SECOND                                             60
 
 Window* window;
 
 GLfloat X[] = { 1, 0, 0 };
 GLfloat Y[] = { 0, 1, 0 };
 GLfloat Z[] = { 0, 0, 1 };
+
 GLfloat rotation[] = {0, 0, 0};
 
-// Shaders: triangle
+// Shader: triangle
 
 const GLchar* triangle_vshader_source = 
     "attribute vec3 position;"
@@ -50,7 +48,7 @@ GLuint triangleVertexShader;
 GLuint triangleFragmentShader;
 GLuint triangleProgram;
 
-// Shaders: text & FPS
+// Shader: text & FPS
 
 const GLchar* text_vshader_source =
     "attribute vec2 position;"
@@ -489,7 +487,7 @@ char animation_frame() {
 // Main
 
 int main(int argc, char** argv) {
-    // Initialize keyboard, mouse and video
+    // Initialize keyboard, mouse and window
 
     Keyboard* keyboard = keyboard_init(NULL, "/dev/input/event1");
     Mouse* mouse = mouse_init(NULL, "/dev/input/event0");
