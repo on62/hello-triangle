@@ -32,6 +32,7 @@ MainWindow::MainWindow() {
     _menu.append(_screenshotMenuItem);
     _screenshotMenuItem.show();
 
+    _window->set_title("Hello Triangle");
     _window->signal_button_press_event().connect(sigc::mem_fun(*this, &MainWindow::on_button_press_event));
     _screenshotMenuItem.signal_activate().connect(sigc::mem_fun(*this, &MainWindow::take_screenshot));
 
