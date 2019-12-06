@@ -23,7 +23,7 @@ GLfloat Y[] = { 0, 1, 0 };
 GLfloat Z[] = { 0, 0, 1 };
 GLfloat rotation[] = {0, 0, 0};
 
-// Triangle
+// Shaders: triangle
 
 const GLchar* triangle_vshader_source = 
     "attribute vec3 position;"
@@ -50,11 +50,7 @@ GLuint triangleVertexShader;
 GLuint triangleFragmentShader;
 GLuint triangleProgram;
 
-GLuint triangleVbo;
-
-GLfloat* triangleModelMatrix;
-
-// Text & FPS
+// Shaders: text & FPS
 
 const GLchar* text_vshader_source =
     "attribute vec2 position;"
@@ -82,15 +78,23 @@ GLuint textVertexShader;
 GLuint textFragmentShader;
 GLuint textFpsProgram;
 
+// Buffers
+
+GLuint triangleVbo;
+GLuint textVbo;
+GLuint fpsVbo;
+
+// Cairo resources, textures: text & FPS
+
 cairo_surface_t* textSurface;
 cairo_t* textCr;
-GLuint textVbo;
 GLint textTexture;
 
 cairo_surface_t* fpsSurface;
 cairo_t* fpsCr;
-GLuint fpsVbo;
 GLint fpsTexture;
+
+// Shaders
 
 void init_shaders() {
     // Triangle
@@ -159,6 +163,8 @@ void destroy_shaders() {
     glDeleteShader(textVertexShader);
 }
 
+// Buffers
+
 void init_buffers() {
     // Triangle
 
@@ -210,6 +216,8 @@ void destroy_buffers() {
     glDeleteBuffers(1, &textVbo);
     glDeleteBuffers(1, &triangleVbo);
 }
+
+// Textures
 
 void init_textures() {
     // Text
@@ -284,11 +292,13 @@ void destroy_textures() {
     cairo_surface_destroy(fpsSurface);
 }
 
+// Matrix uniforms
+
 void update_triangle_model() {
     glUseProgram(triangleProgram);
 
     GLint modelUniform = glGetUniformLocation(triangleProgram, "model");
-    triangleModelMatrix = mat4_identity(NULL);
+    GLfloat* triangleModelMatrix = mat4_identity(NULL);
 
     mat4_rotate(triangleModelMatrix, triangleModelMatrix, rotation[0], X);
     mat4_rotate(triangleModelMatrix, triangleModelMatrix, rotation[1], Y);
@@ -297,7 +307,6 @@ void update_triangle_model() {
     glUniformMatrix4fv(modelUniform, 1, GL_FALSE, triangleModelMatrix);
 
     free(triangleModelMatrix);
-    triangleModelMatrix = NULL;
 
     glCheck();
 }
@@ -365,6 +374,8 @@ void update_projection() {
         glCheck();
     }
 }
+
+// Draw
 
 void draw() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -475,10 +486,16 @@ char animation_frame() {
     return modified;
 }
 
+// Main
+
 int main(int argc, char** argv) {
+    // Initialize keyboard, mouse and video
+
     Keyboard* keyboard = keyboard_init(NULL, "/dev/input/event1");
     Mouse* mouse = mouse_init(NULL, "/dev/input/event0");
     window = window_init(NULL);
+
+    // Setup
 
     init_shaders();
     init_buffers();
@@ -498,10 +515,14 @@ int main(int argc, char** argv) {
 
     update_fps_texture(0);
 
+    // Loop
+
     while (1) {
         if (keyboard_key_is_pressed(keyboard, KEY_ESC)) {
             break;
         }
+
+        // Check for mouse click: toggle animation
 
         mousePressed[1] = mousePressed[0];
         mousePressed[0] = mouse_state(mouse, NULL, &mouseY) & BUTTON_LEFT;
@@ -511,10 +532,14 @@ int main(int argc, char** argv) {
         }
 
         if (animate) {
+            // Animating
+
             if (!animation_frame()) {
                 animate = 0;
             }
         } else {
+            // Controlling with the mouse
+
             float mouseYndc = 1 - 2 * (float)mouseY / window->height;
             float radians = 2 * M_PI * mouseYndc;
 
@@ -530,25 +555,33 @@ int main(int argc, char** argv) {
             }
         }
 
-        struct timeval elapsed;
+        // Update FPS display every 0.1 s
+        
         gettimeofday(&frameTime[0], NULL);
-        timersub(&frameTime[0], &frameTime[1], &elapsed);
-        frameTime[1] = frameTime[0];
 
-        long millisElapsed = (elapsed.tv_sec * 1000000 + elapsed.tv_usec) / 1000;
-        float fps = 1000.0f / millisElapsed;
-
+        struct timeval elapsed;
         timersub(&frameTime[0], &fpsUpdateTime, &elapsed);
-        millisElapsed = (elapsed.tv_sec * 1000000 + elapsed.tv_usec) / 1000;
+        long millisElapsed = (elapsed.tv_sec * 1000000 + elapsed.tv_usec) / 1000;
 
         if (millisElapsed >= 100) {
+            timersub(&frameTime[0], &frameTime[1], &elapsed);
+
+            millisElapsed = (elapsed.tv_sec * 1000000 + elapsed.tv_usec) / 1000;
+            float fps = 1000.0f / millisElapsed;
+
             fpsUpdateTime = frameTime[0];
             update_fps_texture(fps);
         }
 
+        frameTime[1] = frameTime[0];
+
+        // Draw
+
         draw();
         swap_buffers();
     }
+
+    // Teardown
 
     destroy_textures();
     destroy_buffers();
