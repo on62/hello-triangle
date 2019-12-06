@@ -9,11 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , _animate(false)
-    , _menu(this)
 {
     ui->setupUi(this);
-
-    _screenshotAction = _menu.addAction("Take Screenshot");
 
     connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
     connect(ui->xSlider, &QSlider::valueChanged, this, &MainWindow::sliderValueChanged);
@@ -22,8 +19,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->animateButton, &QPushButton::clicked, this, &MainWindow::animateButtonClicked);
     connect(ui->quitButton, &QPushButton::clicked, this, &MainWindow::close);
-
-    connect(_screenshotAction, &QAction::triggered, this, &MainWindow::takeScreenshot);
 
     _timer.callOnTimeout([&](){
         ui->xSlider->setValue(ui->xSlider->value() + 1);
@@ -35,9 +30,14 @@ MainWindow::MainWindow(QWidget *parent)
             ui->zSlider->value() >= ui->zSlider->maximum()) {
             _timer.stop();
             _animate = false;
+            ui->fpsLabel->setText("");
         }
+
+        float fps = 1000.0 / _time.restart();
+
+        ui->fpsLabel->setText(QString::number(fps, 'f', 2)+" FPS");
     });
-    _timer.setInterval(1000 / 30);
+    _timer.setInterval(1000 / 60);
 }
 
 MainWindow::~MainWindow()
@@ -61,26 +61,24 @@ void MainWindow::animateButtonClicked()
 {
     _animate = !_animate;
 
+    if (!_animate)
+        ui->fpsLabel->setText("");
+
     if (_animate) {
+        if (ui->xSlider->value() >= ui->xSlider->maximum() ||
+            ui->ySlider->value() >= ui->ySlider->maximum() ||
+            ui->zSlider->value() >= ui->zSlider->maximum()) {
+            ui->xSlider->setValue(0);
+            ui->ySlider->setValue(0);
+            ui->zSlider->setValue(0);
+        }
+
         _timer.start();
     } else {
         _timer.stop();
     }
 }
 
-void MainWindow::takeScreenshot()
-{
-    const QWindow* window = windowHandle();
-    QPixmap screenShot = window->screen()->grabWindow(winId());
-    screenShot.save("screenshot.png");
-}
-
-void MainWindow::mousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::RightButton) {
-        _menu.exec(event->globalPos());
-    }
-}
 
 
 

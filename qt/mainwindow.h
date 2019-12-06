@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTime>
 #include <QTimer>
 #include <QMenu>
 #include <QAction>
@@ -20,18 +21,13 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    QTime _time;
     QTimer _timer;
     bool _animate;
-
-    QMenu _menu;
-    QAction* _screenshotAction;
 
 private slots:
     void sliderValueChanged();
     void animateButtonClicked();
-    void takeScreenshot();
 
-protected:
-    void mousePressEvent(QMouseEvent *event);
 };
 #endif // MAINWINDOW_H
