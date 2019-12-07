@@ -20,23 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->animateButton, &QPushButton::clicked, this, &MainWindow::animateButtonClicked);
     connect(ui->quitButton, &QPushButton::clicked, this, &MainWindow::close);
 
-    _timer.callOnTimeout([&](){
-        ui->xSlider->setValue(ui->xSlider->value() + 1);
-        ui->ySlider->setValue(ui->ySlider->value() + 1);
-        ui->zSlider->setValue(ui->zSlider->value() + 1);
+    connect(&_timer, &QTimer::timeout, this, &MainWindow::timerTimedOut);
 
-        if (ui->xSlider->value() >= ui->xSlider->maximum() &&
-            ui->ySlider->value() >= ui->ySlider->maximum() &&
-            ui->zSlider->value() >= ui->zSlider->maximum()) {
-            _timer.stop();
-            _animate = false;
-            ui->fpsLabel->setText("");
-        }
-
-        float fps = 1000.0 / _time.restart();
-
-        ui->fpsLabel->setText(QString::number(fps, 'f', 2)+" FPS");
-    });
     _timer.setInterval(1000 / 60);
 }
 
@@ -77,6 +62,25 @@ void MainWindow::animateButtonClicked()
     } else {
         _timer.stop();
     }
+}
+
+void MainWindow::timerTimedOut()
+{
+    ui->xSlider->setValue(ui->xSlider->value() + 1);
+    ui->ySlider->setValue(ui->ySlider->value() + 1);
+    ui->zSlider->setValue(ui->zSlider->value() + 1);
+
+    if (ui->xSlider->value() >= ui->xSlider->maximum() &&
+        ui->ySlider->value() >= ui->ySlider->maximum() &&
+        ui->zSlider->value() >= ui->zSlider->maximum()) {
+        _timer.stop();
+        _animate = false;
+        ui->fpsLabel->setText("");
+    }
+
+    float fps = 1000.0 / _time.restart();
+
+    ui->fpsLabel->setText(QString::number(fps, 'f', 2)+" FPS");
 }
 
 

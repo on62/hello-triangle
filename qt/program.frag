@@ -1,5 +1,7 @@
 #version 100
 
+precision highp float;
+
 varying vec3 vertColor;
 
 void main() {

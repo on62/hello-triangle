@@ -28,6 +28,7 @@ private:
 private slots:
     void sliderValueChanged();
     void animateButtonClicked();
+    void timerTimedOut();
 
 };
 #endif // MAINWINDOW_H
